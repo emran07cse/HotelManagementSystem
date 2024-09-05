@@ -1,12 +1,13 @@
 # Main server app
 
-from flask import Flask, render_template, request, redirect, url_for, make_response
+from flask import Flask, render_template, request, redirect, url_for, make_response,flash
 from werkzeug.utils import secure_filename
 import os
 from os.path import join, dirname, realpath, basename
 import database
 import json
 from datetime import datetime
+
 
 os.chdir(__file__.replace(basename(__file__), ''))
 
@@ -38,12 +39,25 @@ def index():
 @app.route('/Customer', methods=['GET', 'POST'])
 def customer():
     if request.method == 'POST':
-        fname = request.form['fname']
-        lname = request.form['lname']
-        address = request.form['address']
-        ph_no = request.form['ph_no']
-        database.source("new_customer.sql", fname, lname, address, ph_no, 0, output=False)
+        # Safely get form data with default empty strings
+        fname = request.form.get('fname', '')
+        lname = request.form.get('lname', '')
+        address = request.form.get('address', '')
+        ph_no = request.form.get('ph_no', '')
+        
+        # Debug: Print form data for verification
+        print(f"Received data: fname={fname}, lname={lname}, address={address}, ph_no={ph_no}")
+        
+        try:
+            # Assuming 'database' is your custom module and 'source' is a method that executes SQL scripts
+            database.source("new_customer.sql", fname, lname, address, ph_no, 0, output=False)
+        except Exception as e:
+            print(f"Error executing SQL script: {e}")
+            flash("An error occurred while processing your request.")
+            return render_template("new_form.html", var="Customer")
+
         return redirect(url_for('index'))
+
     return render_template("new_form.html", var="Customer")
 
 @app.route('/Employee', methods=['GET', 'POST'])
